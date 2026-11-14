@@ -2,7 +2,7 @@
 
 Upload a CSV, ask a question in plain English, and get the SQL, a chart, and the results.
 
-**Live demo:** https://ask-your-data-roop.streamlit.app/
+**Live demo:** https://ask-your-data-907.streamlit.app/
 
 ## How it works
 
