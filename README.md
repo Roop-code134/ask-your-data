@@ -1,48 +1,31 @@
 # Ask Your Data
 
-Upload a CSV, ask a question in plain English, and get the SQL, a chart and the results.
+Upload a CSV, ask a question in plain English, and get the SQL, a chart, and the results.
 
 **Live demo:** https://ask-your-data-roop.streamlit.app/
 
-## What it does
-- Loads any CSV into an in-memory SQLite database
-- Sends the table's schema and your question to an LLM (Google Gemini), which writes the SQL
-- Checks the SQL is read-only before running it
-- Shows the result as a table and a chart, with the SQL visible and a CSV download
-
 ## How it works
-1. **Upload:** pandas reads the CSV and cleans the column names
-2. **Schema:** the app collects column names, types and sample rows
-3. **Generate:** the LLM turns the question into one SQLite query
-4. **Validate:** only `SELECT`/`WITH` queries are allowed; anything else is blocked
-5. **Run and display:** results appear as a table and a chart
 
-## Safety
-The AI is instructed to write read-only SQL, and a separate check in code blocks `DROP`, `DELETE`, `UPDATE`, `INSERT` and chained statements, so a bad or manipulated query can't change the data.
+1. The CSV is loaded with pandas and cleaned: column names are normalized and `dd/mm/yyyy` text dates are converted to `YYYY-MM-DD`.
+2. The data goes into an in-memory SQLite table.
+3. The table schema and a few sample rows are sent to an LLM (`openai/gpt-oss-120b` on Groq), which writes a SQL query.
+4. A validation layer blocks anything that is not a single read-only `SELECT`, including `DROP`, `DELETE`, `UPDATE`, and chained statements. SQLite is also set to `PRAGMA query_only = ON` as a second lock.
+5. The query runs, and the result is shown as a table, a chart, and a downloadable CSV.
+
+## Features
+
+- Plain-English questions turned into SQL
+- Read-only validation (regex check plus SQLite `query_only`)
+- Handling of text-format dates
+- Auto-generated charts and an AI summary of the dataset
+- CSV download of any result
+
+## Accuracy check
+
+`tests.py` runs 12 questions through the app's pipeline and compares each result with a hand-written SQL query. Result: **12/12 matched**.
 
 ## Tech stack
-Python, Streamlit, pandas, SQLite, Altair, Google Gemini API
 
-## Testing
-I checked AI-generated answers against hand-written SQL. For example, the app's count of orders placed in 2017 matched my own query using `COUNT(DISTINCT order_id)`.
+Python, pandas, SQLite, Streamlit, Altair, Groq API
 
-## Known limitations
-- Works with one table (one CSV) at a time
-- Dates stored as text are handled with prompt rules, not a proper date type
-- The demo uses a shared free API key, so heavy use may hit rate limits
-- Please don't upload private data: questions are processed by a third-party AI service
-
-## Run it locally
-```
-pip install -r requirements.txt
-```
-Create `.streamlit/secrets.toml` with `GEMINI_API_KEY = "your-key"`, then run:
-```
-streamlit run app.py
-```
-
-## Sample data
-`sales.csv` is the public Superstore sales dataset.
-
-## What I'd improve next
-Multi-file joins, a proper date-parsing step, and per-user rate limits.
+## Run locally
